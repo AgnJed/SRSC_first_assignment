@@ -2,6 +2,7 @@
  * Represents the result of an encryption operation.
  * Contains the encrypted text, authentication tag, and IV.
  */
+
 public class EncryptionResult {
     private final String encryptedText;
     private final String authTag;
