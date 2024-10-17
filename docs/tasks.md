@@ -10,3 +10,13 @@ By analising the requirements of the work assigment the sofware design will be a
 - API interface: if enogth time create a interface and then implement it as the solution. aka abstraction
 
 - Questions: Application will work as a knownd intreceptor? What annalogy can be applied to the to be developed application
+
+- Does the console read configuration from the file cryptoconfig.txt?
+
+### Task 2 - Create a secure communication layer over UDP using the Datagram Sockets
+
+- key initialization: load encryption and MAC keys from the class that is supposed to read files from cryptoconfig.txt
+
+- send() method: encrypt the message, add a MAC to the encypted message, add a sequence number to the packet to handle order control, send the UDP packet
+
+- receive() method: receive the packet, check the sequence number, verify the MAC, decrypt the message and return it to the user
