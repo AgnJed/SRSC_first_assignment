@@ -1,3 +1,5 @@
+package service;
+
 /**
  * Represents the result of an encryption operation.
  * Contains the encrypted text, authentication tag, and IV.
