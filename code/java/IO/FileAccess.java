@@ -4,7 +4,9 @@ import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.service.IntegrityMode;
 import java.util.HashMap;
@@ -161,6 +163,38 @@ public class FileAccess {
         }
     }
 
+
+    // Method to write the generated IV to the configuration file
+    public void writeConfigFile(String filePath) {
+        String ivValue = generateIv(); // Generate a new IV
+
+        // Read the existing configuration and replace the IV line
+        StringBuilder updatedConfig = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Replace the line containing "IV:"
+                if (line.startsWith("IV:")) {
+                    updatedConfig.append("IV: ").append(ivValue).append("\n");
+                } else {
+                    updatedConfig.append(line).append("\n"); // Keep other lines unchanged
+                }
+            }
+        } catch (IOException e) {
+            logger.error(() -> "Error reading the config file: " + e.getMessage());
+            return;
+        }
+
+        // Write the updated configuration back to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write(updatedConfig.toString());
+        } catch (IOException e) {
+            logger.error(() -> "Error writing to the config file: " + e.getMessage());
+        }
+    }
+
+
     // Helper method to check for "NULL" and use the default value if needed
     private String getDefaultValue(String value, String defaultValue) {
         return (value == null || NULL_VALUE.equalsIgnoreCase(value)) ? defaultValue : value;
@@ -179,4 +213,6 @@ public class FileAccess {
     public IntegrityMode getIntegrityMode() {
         return IntegrityMode.valueOf(integrity);
     }
+
+
 }
