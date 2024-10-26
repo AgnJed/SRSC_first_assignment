@@ -3,16 +3,19 @@ package java.IO;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.service.IntegrityMode;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.service.EncryptionService.generateIv;
 
 public class FileAccess {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileAccess.class);
 
     // Default values for each field
     public static final String DEFAULT_CONFIDENTIALITY = "AES/CBC/PKCS5Padding";
@@ -25,8 +28,7 @@ public class FileAccess {
     public static final String DEFAULT_MAC = "HMAC-SHA256";
     public static final String DEFAULT_MAC_KEY = "A1B2C3D4E5F60708";
     public static final int DEFAULT_MAC_KEY_SIZE = 128;
-    private static final Logger logger = LoggerFactory.getLogger(FileAccess.class);
-    private static final String CONFIG_FILE_NAME = "testConfig.txt";
+
     private static final String CONFIDENTIALITY_KEY = "CONFIDENTIALITY";
     private static final String SYMMETRIC_KEY_KEY = "SYMMETRIC_KEY";
     private static final String SYMMETRIC_KEY_SIZE_KEY = "SYMMETRIC_KEY_SIZE";
@@ -37,7 +39,10 @@ public class FileAccess {
     private static final String MAC_KEY = "MAC";
     private static final String MACKEY_KEY = "MACKEY";
     private static final String MACKEY_SIZE_KEY = "MACKEY_SIZE";
+
     private static final String NULL_VALUE = "NULL";
+    private static final String SEPARATOR = ": ";
+
     private String confidentialityAlgorithm;
     private byte[] symmetricKey;
     private Integer symmetricKeySize;
@@ -137,11 +142,11 @@ public class FileAccess {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (!line.contains(":")) continue;
+                if (!line.contains(SEPARATOR)) continue;
 
-                String[] parts = line.split(":", 2);
-                String key = parts[0].trim();
-                String value = parts[1].trim();
+                List<String> parts = Arrays.stream(line.split(SEPARATOR)).map(String::trim).toList();
+                String key = parts.get(0);
+                String value = parts.get(1);
 
                 configMap.put(key, NULL_VALUE.equalsIgnoreCase(value) ? null : value);
             }
@@ -166,17 +171,15 @@ public class FileAccess {
 
     // Method to write the generated IV to the configuration file
     public void writeConfigFile(String filePath) {
-        String ivValue = generateIv(); // Generate a new IV
+        byte[] ivValue = generateIv(); // Generate a new IV
 
-        // Read the existing configuration and replace the IV line
         StringBuilder updatedConfig = new StringBuilder();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                // Replace the line containing "IV:"
-                if (line.startsWith("IV:")) {
-                    updatedConfig.append("IV: ").append(ivValue).append("\n");
+                if (line.startsWith(IV_KEY + SEPARATOR)) {
+                    updatedConfig.append(IV_KEY + SEPARATOR).append(Arrays.toString(ivValue)).append("\n");
                 } else {
                     updatedConfig.append(line).append("\n"); // Keep other lines unchanged
                 }
@@ -213,6 +216,4 @@ public class FileAccess {
     public IntegrityMode getIntegrityMode() {
         return IntegrityMode.valueOf(integrity);
     }
-
-
 }

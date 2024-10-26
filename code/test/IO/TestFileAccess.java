@@ -25,8 +25,8 @@ class TestFileAccess {
 
     @Test
     void testSymmetricKey() {
-        fileAccess.setSymmetricKey(DEFAULT_SYMMETRIC_KEY);
-        assertEquals(DEFAULT_SYMMETRIC_KEY, fileAccess.getSymmetricKey());
+        fileAccess.setSymmetricKey(DEFAULT_SYMMETRIC_KEY.getBytes());
+        assertEquals(DEFAULT_SYMMETRIC_KEY.getBytes(), fileAccess.getSymmetricKey());
     }
 
     @Test
@@ -67,8 +67,8 @@ class TestFileAccess {
 
     @Test
     void testMacKey() {
-        fileAccess.setMacKey(DEFAULT_MAC_KEY);
-        assertEquals(DEFAULT_MAC_KEY, fileAccess.getMacKey());
+        fileAccess.setMacKey(DEFAULT_MAC_KEY.getBytes());
+        assertEquals(DEFAULT_MAC_KEY.getBytes(), fileAccess.getMacKey());
     }
 
     @Test
