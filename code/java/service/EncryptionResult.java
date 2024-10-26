@@ -1,4 +1,4 @@
-package service;
+package java.service;
 
 /**
  * Represents the result of an encryption operation.
@@ -22,6 +22,7 @@ public class EncryptionResult {
     public String getAuthTag() {
         return authTag;
     }
+
     public String getIv() {
         return iv;
     }

@@ -1,4 +1,4 @@
-package service;
+package java.service;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -8,19 +8,21 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * AES-GCM encryption service
+ * AES-GCM encryption java.service
  */
 public class EncryptionService {
+
 
     private static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
     private static final int IV_SIZE_BYTES = 16;
 
     /**
      * Encrypts the given plaintext using AES-GCM with the given key and IV.
-     * @param plaintext The plaintext to encrypt
-     * @param aad Additional authenticated data
-     * @param key The key to use
-     * @param iv The initialization vector to use
+     *
+     * @param plaintext     The plaintext to encrypt
+     * @param aad           Additional authenticated data
+     * @param key           The key to use
+     * @param iv            The initialization vector to use
      * @param authTagLength The length of the authentication tag in bits (128, 120, 112, 104, 96)
      * @return a {@link EncryptionResult} containing the encrypted text, authentication tag and IV
      * @throws Exception If an error occurs.
@@ -52,10 +54,11 @@ public class EncryptionService {
 
     /**
      * Decrypts the given ciphertext using AES-GCM with the given key and IV.
-     * @param cipherText The ciphertext to decrypt
-     * @param aad Additional authenticated data
-     * @param key The key to use
-     * @param iv The initialization vector to use
+     *
+     * @param cipherText    The ciphertext to decrypt
+     * @param aad           Additional authenticated data
+     * @param key           The key to use
+     * @param iv            The initialization vector to use
      * @param authTagLength The length of the authentication tag in bits (128, 120, 112, 104, 96)
      * @return The decrypted plaintext
      * @throws Exception If an error occurs.
@@ -73,6 +76,7 @@ public class EncryptionService {
 
     /**
      * Generates a random AES key.
+     *
      * @return The generated key
      * @throws Exception If an error occurs.
      */
@@ -84,12 +88,23 @@ public class EncryptionService {
 
     /**
      * Generates a random initialization vector.
+     *
      * @return The generated IV
      */
     public static byte[] generateIv() {
         byte[] iv = new byte[IV_SIZE_BYTES];
         new SecureRandom().nextBytes(iv);
         return iv;
+    }
+
+    /**
+     * Checks if the given cipher requires an IV.
+     *
+     * @param cipher The cipher to check
+     * @return True if the cipher requires an IV, false otherwise
+     */
+    public boolean doesCipherRequireIv(Cipher cipher) {
+        return cipher.getIV() != null;
     }
 
 }

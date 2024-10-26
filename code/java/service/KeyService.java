@@ -1,4 +1,4 @@
-package service;
+package java.service;
 
 import java.io.FileInputStream;
 import java.security.KeyStore;
@@ -18,6 +18,7 @@ public class KeyService {
 
     /**
      * Gets the public key from the given certificate
+     *
      * @param certificatePath The path to the certificate
      * @return The public key
      * @throws Exception If an error occurs.
@@ -31,6 +32,7 @@ public class KeyService {
 
     /**
      * Gets the private key from the given keystore
+     *
      * @param keystorePath The path to the keystore
      * @return The private key
      * @throws Exception If an error occurs.
