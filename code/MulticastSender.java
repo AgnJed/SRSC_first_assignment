@@ -11,23 +11,23 @@ public class MulticastSender {
 //            System.exit(0);
 //        }
 
-        int more = 20; // change if needed, send 20 time a MCAST message
+        int more = 1; // change if needed, send 20 time a MCAST message
         int port = 7000;
-        InetAddress group = InetAddress.getByName("127.0.0.1");
+        InetAddress group = InetAddress.getByName("224.0.0.0");
         int timeInterval = 2;
         String msg;
-//
-//        if (!group.isMulticastAddress()) {
-//            System.err.println("Multicast address required...");
-//            System.exit(0);
-//        }
 
-        DSTPSocket ms = new SecureDatagramSocket(group, port);
+        if (!group.isMulticastAddress()) {
+            System.err.println("Multicast address required...");
+            System.exit(0);
+        }
+
+        DSTPSocket ms = new SecureDatagramSocket(group, port, true);
         do {
-            String msgsecret = "topcsecret message, sent on: ";
+            String msgsecret = "top secret message, sent on: ";
             String msgdate = new Date().toString();
             msg = msgsecret + msgdate;
-            ms.send(msg.getBytes(), group, port);
+            ms.send(new DatagramPacket(msg.getBytes(), msg.length(), group, port));
 
             try {
                 Thread.sleep(1000L * timeInterval);
@@ -36,7 +36,7 @@ public class MulticastSender {
 
         } while (--more > 0);
         msg = "fim!";
-        ms.send(msg.getBytes(), group, port);
+        ms.send(new DatagramPacket(msg.getBytes(), msg.length(), group, port));
         ms.close();
 
     }

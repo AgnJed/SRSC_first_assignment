@@ -1,29 +1,32 @@
+import java.net.DatagramPacket;
 import java.net.InetAddress;
 
 public class MulticastReceiver {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
-            System.err.println("usage: java MulticastReceiver grupo_multicast porto");
-            System.exit(0);
-        }
+//        if (args.length != 2) {
+//            System.err.println("usage: java MulticastReceiver grupo_multicast porto");
+//            System.exit(0);
+//        }
 
-        int port = Integer.parseInt(args[1]);
-        InetAddress group = InetAddress.getByName(args[0]);
+        int port = 7000;
+        InetAddress group = InetAddress.getByName("224.0.0.0");
 
         if (!group.isMulticastAddress()) {
             System.err.println("Multicast address required...");
             System.exit(0);
         }
 
-        SecureDatagramSocket rs = new SecureDatagramSocket(group, port);
-//
-//    rs.joinGroup(group);
-
+        SecureDatagramSocket rs = new SecureDatagramSocket(group, port, true);
+        rs.joinGroup(group);
+        DatagramPacket p = new DatagramPacket(new byte[65536], 65536);
         String recvmsg;
 
         do {
-            recvmsg = rs.receive();
+
+            p.setLength(65536); // resize with max size
+            rs.receive(p);
+            recvmsg = new String(p.getData(), 0, p.getLength());
 
             System.out.println("Msg recebida: " + recvmsg);
         } while (!recvmsg.equals("fim!"));
