@@ -4,139 +4,29 @@ import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 
 import java.io.*;
-import java.service.IntegrityMode;
+import java.service.Configuration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import static java.service.EncryptionService.generateIv;
-
+/**
+ * Class to read and write the configuration file.
+ */
 public class FileAccess {
 
     private static final Logger logger = LoggerFactory.getLogger(FileAccess.class);
 
-    // Default values for each field
-    public static final String DEFAULT_CONFIDENTIALITY = "AES/CBC/PKCS5Padding";
-    public static final String DEFAULT_SYMMETRIC_KEY = "00112233445566778899AABBCCDDEEFF";
-    public static final int DEFAULT_SYMMETRIC_KEY_SIZE = 128;
-    public static final int DEFAULT_IV_SIZE = 16;
-    public static final String DEFAULT_IV = "0000000000000000";
-    public static final String DEFAULT_INTEGRITY = "HMAC";
-    public static final String DEFAULT_H = "SHA-256";
-    public static final String DEFAULT_MAC = "HMAC-SHA256";
-    public static final String DEFAULT_MAC_KEY = "A1B2C3D4E5F60708";
-    public static final int DEFAULT_MAC_KEY_SIZE = 128;
-
-    private static final String CONFIDENTIALITY_KEY = "CONFIDENTIALITY";
-    private static final String SYMMETRIC_KEY_KEY = "SYMMETRIC_KEY";
-    private static final String SYMMETRIC_KEY_SIZE_KEY = "SYMMETRIC_KEY_SIZE";
-    private static final String IV_SIZE_KEY = "IV Size";
-    private static final String IV_KEY = "IV";
-    private static final String INTEGRITY_KEY = "INTEGRITY";
-    private static final String H_KEY = "H";
-    private static final String MAC_KEY = "MAC";
-    private static final String MACKEY_KEY = "MACKEY";
-    private static final String MACKEY_SIZE_KEY = "MACKEY_SIZE";
-
     private static final String NULL_VALUE = "NULL";
     private static final String SEPARATOR = ": ";
 
-    private String confidentialityAlgorithm;
-    private byte[] symmetricKey;
-    private Integer symmetricKeySize;
-    private Integer ivSize;
-    private String iv;
-    private String integrity;
-    private String h;
-    private String mac;
-    private byte[] macKey;
-    private Integer macKeySize;
-
-    public String getConfidentialityAlgorithm() {
-        return confidentialityAlgorithm;
-    }
-
-    public void setConfidentialityAlgorithm(String confidentialityAlgorithm) {
-        this.confidentialityAlgorithm = confidentialityAlgorithm;
-    }
-
-    public byte[] getSymmetricKey() {
-        return symmetricKey;
-    }
-
-    public void setSymmetricKey(byte[] symmetricKey) {
-        this.symmetricKey = symmetricKey;
-    }
-
-    public Integer getSymmetricKeySize() {
-        return symmetricKeySize;
-    }
-
-    public void setSymmetricKeySize(Integer symmetricKeySize) {
-        this.symmetricKeySize = symmetricKeySize;
-    }
-
-    public Integer getIvSize() {
-        return ivSize;
-    }
-
-    public void setIvSize(Integer ivSize) {
-        this.ivSize = ivSize;
-    }
-
-    public String getIv() {
-        return iv;
-    }
-
-    public void setIv(String iv) {
-        this.iv = iv;
-    }
-
-    public String getIntegrity() {
-        return integrity;
-    }
-
-    public void setIntegrity(String integrity) {
-        this.integrity = integrity;
-    }
-
-    public String getH() {
-        return h;
-    }
-
-    public void setH(String h) {
-        this.h = h;
-    }
-
-    public String getMac() {
-        return mac;
-    }
-
-    public void setMac(String mac) {
-        this.mac = mac;
-    }
-
-    public byte[] getMacKey() {
-        return macKey;
-    }
-
-    public void setMacKey(byte[] macKey) {
-        this.macKey = macKey;
-    }
-
-    public Integer getMacKeySize() {
-        return macKeySize;
-    }
-
-    public void setMacKeySize(Integer macKeySize) {
-        this.macKeySize = macKeySize;
-    }
-
-
-    // Method to read the configuration file and populate fields
-    public void readConfigFile(String filePath) {
+    /**
+     * Read the configuration from the file.
+     * @param filePath The path to the configuration file.
+     * @return The configuration object.
+     * TODO the return type could be a Map<String, String> instead of Configuration
+     */
+    public Configuration readConfigFile(String filePath) {
         Map<String, String> configMap = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -150,70 +40,28 @@ public class FileAccess {
 
                 configMap.put(key, NULL_VALUE.equalsIgnoreCase(value) ? null : value);
             }
-
-            // Set fields, checking for "NULL" and using defaults if necessary
-            setConfidentialityAlgorithm(getDefaultValue(configMap.get(CONFIDENTIALITY_KEY), DEFAULT_CONFIDENTIALITY));
-            setSymmetricKey(getDefaultValue(configMap.get(SYMMETRIC_KEY_KEY), DEFAULT_SYMMETRIC_KEY).getBytes());
-            setSymmetricKeySize(parseIntDefault(configMap.get(SYMMETRIC_KEY_SIZE_KEY), DEFAULT_SYMMETRIC_KEY_SIZE));
-            setIvSize(parseIntDefault(configMap.get(IV_SIZE_KEY), DEFAULT_IV_SIZE));
-            setIv(getDefaultValue(configMap.get(IV_KEY), DEFAULT_IV));
-            setIntegrity(getDefaultValue(configMap.get(INTEGRITY_KEY), DEFAULT_INTEGRITY));
-            setH(getDefaultValue(configMap.get(H_KEY), DEFAULT_H));
-            setMac(getDefaultValue(configMap.get(MAC_KEY), DEFAULT_MAC));
-            setMacKey(getDefaultValue(configMap.get(MACKEY_KEY), DEFAULT_MAC_KEY).getBytes());
-            setMacKeySize(parseIntDefault(configMap.get(MACKEY_SIZE_KEY), DEFAULT_MAC_KEY_SIZE));
-
         } catch (IOException e) {
             logger.error(() -> "Error reading the config file: " + e.getMessage());
         }
+        return Configuration.parceConfiguration(configMap);
     }
 
-
-    // Method to write the generated IV to the configuration file
-    public void writeConfigFile(String filePath) {
-        byte[] ivValue = generateIv(); // Generate a new IV
-
-        StringBuilder updatedConfig = new StringBuilder();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith(IV_KEY + SEPARATOR)) {
-                    updatedConfig.append(IV_KEY + SEPARATOR).append(Arrays.toString(ivValue)).append("\n");
-                } else {
-                    updatedConfig.append(line).append("\n"); // Keep other lines unchanged
-                }
-            }
-        } catch (IOException e) {
-            logger.error(() -> "Error reading the config file: " + e.getMessage());
-            return;
-        }
-
-        // Write the updated configuration back to the file
+    /**
+     * Write the configuration back to the file.
+     * @param filePath The path to the configuration file.
+     */
+    public void writeConfigFile(String filePath, Configuration config) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writer.write(updatedConfig.toString());
+            for (Map.Entry<String, String> entry : config.toMap().entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue() == null ? NULL_VALUE : entry.getValue();
+
+                writer.write(key + SEPARATOR + value);
+                writer.newLine();
+            }
+
         } catch (IOException e) {
-            logger.error(() -> "Error writing to the config file: " + e.getMessage());
+            logger.error(() -> "Error writing the config file: " + e.getMessage());
         }
-    }
-
-
-    // Helper method to check for "NULL" and use the default value if needed
-    private String getDefaultValue(String value, String defaultValue) {
-        return (value == null || NULL_VALUE.equalsIgnoreCase(value)) ? defaultValue : value;
-    }
-
-    // Helper to safely parse integers with a default fallback
-    private Integer parseIntDefault(String value, int defaultValue) {
-        try {
-            return (value != null && !NULL_VALUE.equalsIgnoreCase(value)) ? Integer.parseInt(value) : defaultValue;
-        } catch (NumberFormatException e) {
-            logger.error(() -> "Error parsing integer value: " + e.getMessage());
-            return defaultValue;
-        }
-    }
-
-    public IntegrityMode getIntegrityMode() {
-        return IntegrityMode.valueOf(integrity);
     }
 }
