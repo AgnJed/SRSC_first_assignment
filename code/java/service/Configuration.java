@@ -1,5 +1,6 @@
 package java.service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,7 +9,7 @@ public class Configuration {
     private byte[] symmetricKey;
     private Integer symmetricKeySize;
     private Integer ivSize;
-    private String iv;
+    private byte[] iv;
     private String integrity;
     private String hash;
     private String hmac;
@@ -47,11 +48,11 @@ public class Configuration {
         this.ivSize = ivSize;
     }
 
-    public String getIv() {
+    public byte[] getIv() {
         return iv;
     }
 
-    public void setIv(String iv) {
+    public void setIv(byte[] iv) {
         this.iv = iv;
     }
 
@@ -127,7 +128,7 @@ public class Configuration {
         config.setSymmetricKey(configuration.get(ConfigurationKeys.SYMMETRIC_KEY.name()));
         config.setSymmetricKeySize(configuration.get(ConfigurationKeys.SYMMETRIC_KEY_SIZE.name()));
         config.setIvSize(configuration.get(ConfigurationKeys.IV_SIZE.name()));
-        config.setIv(configuration.get(ConfigurationKeys.IV.name()));
+        config.setIv(configuration.get(ConfigurationKeys.IV.name()).getBytes());
         config.setIntegrity(configuration.get(ConfigurationKeys.INTEGRITY.name()));
         config.setHash(configuration.get(ConfigurationKeys.H.name()));
         config.setHmac(configuration.get(ConfigurationKeys.HMAC.name()));
@@ -147,7 +148,7 @@ public class Configuration {
         configMap.put(ConfigurationKeys.SYMMETRIC_KEY.name(), symmetricKey == null ? null : new String(symmetricKey));
         configMap.put(ConfigurationKeys.SYMMETRIC_KEY_SIZE.name(), symmetricKeySize == null ? null : symmetricKeySize.toString());
         configMap.put(ConfigurationKeys.IV_SIZE.name(), ivSize == null ? null : ivSize.toString());
-        configMap.put(ConfigurationKeys.IV.name(), iv);
+        configMap.put(ConfigurationKeys.IV.name(), Arrays.toString(iv));
         configMap.put(ConfigurationKeys.INTEGRITY.name(), integrity);
         configMap.put(ConfigurationKeys.H.name(), hash);
         configMap.put(ConfigurationKeys.HMAC.name(), hmac);
