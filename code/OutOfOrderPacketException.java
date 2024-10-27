@@ -1,5 +1,3 @@
-package java.service.exceptions;
-
 /**
  * Exception thrown when a packet is out of order
  */

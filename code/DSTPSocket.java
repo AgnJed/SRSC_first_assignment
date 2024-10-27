@@ -1,5 +1,3 @@
-package java.service;
-
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -13,7 +11,7 @@ public interface DSTPSocket {
      * @throws IOException if an I/O error occurs while sending the message.
      * @throws Exception if a cryptographic or protocol error occurs.
      */
-    void send(String message, InetAddress address, int port) throws IOException, Exception;
+    void send(byte[] message, InetAddress address, int port) throws IOException, Exception;
 
     /**
      * Receives a message securely using the DSTP protocol.

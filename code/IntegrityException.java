@@ -1,5 +1,3 @@
-package java.service.exceptions;
-
 /**
  * Exception thrown when the integrity mode is not valid
  */

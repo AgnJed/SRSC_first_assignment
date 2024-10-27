@@ -1,10 +1,7 @@
-package java.IO;
-
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 
 import java.io.*;
-import java.service.Configuration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +15,7 @@ public class FileAccess {
     private static final Logger logger = LoggerFactory.getLogger(FileAccess.class);
 
     private static final String NULL_VALUE = "NULL";
-    private static final String SEPARATOR = ": ";
+    private static final String SEPARATOR = ":";
 
     /**
      * Read the configuration from the file.
@@ -36,9 +33,9 @@ public class FileAccess {
 
                 List<String> parts = Arrays.stream(line.split(SEPARATOR)).map(String::trim).toList();
                 String key = parts.get(0);
-                String value = parts.get(1);
+                String value = parts.size() == 1 ? null : parts.get(1);
 
-                configMap.put(key, NULL_VALUE.equalsIgnoreCase(value) ? null : value);
+                configMap.put(key, NULL_VALUE.equalsIgnoreCase(value) ? NULL_VALUE : value);
             }
         } catch (IOException e) {
             logger.error(() -> "Error reading the config file: " + e.getMessage());
@@ -61,7 +58,7 @@ public class FileAccess {
             }
 
         } catch (IOException e) {
-            logger.error(() -> "Error writing the config file: " + e.getMessage());
+            //logger.error(() -> "Error writing the config file: " + e.getMessage());
         }
     }
 }

@@ -1,5 +1,4 @@
-package java.service;
-
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,10 +27,6 @@ public class Configuration {
         return symmetricKey;
     }
 
-    public void setSymmetricKey(byte[] symmetricKey) {
-        this.symmetricKey = symmetricKey;
-    }
-
     public Integer getSymmetricKeySize() {
         return symmetricKeySize;
     }
@@ -54,6 +49,10 @@ public class Configuration {
 
     public void setIv(byte[] iv) {
         this.iv = iv;
+    }
+
+    public void setIv(String iv) {
+        this.iv = stringToBytesOrNull(iv);
     }
 
     public String getIntegrity() {
@@ -84,10 +83,6 @@ public class Configuration {
         return hmacKey;
     }
 
-    public void setHmacKey(byte[] hmacKey) {
-        this.hmacKey = hmacKey;
-    }
-
     public Integer getHmacKeySize() {
         return hmacKeySize;
     }
@@ -97,23 +92,23 @@ public class Configuration {
     }
 
     public void setSymmetricKey(String symmetricKey) {
-        this.symmetricKey = symmetricKey.getBytes();
+        this.symmetricKey = stringToBytesOrNull(symmetricKey);
     }
 
     public void setHmacKey(String hmacKey) {
-        this.hmacKey = hmacKey.getBytes();
+        this.hmacKey = stringToBytesOrNull(hmacKey);
     }
 
     public void setHmacKeySize(String hmacKeySize) {
-        this.hmacKeySize = Integer.parseInt(hmacKeySize);
+        this.hmacKeySize = parseOrNull(hmacKeySize);
     }
 
     public void setSymmetricKeySize(String symmetricKeySize) {
-        this.symmetricKeySize = Integer.parseInt(symmetricKeySize);
+        this.symmetricKeySize = parseOrNull(symmetricKeySize);
     }
 
     public void setIvSize(String ivSize) {
-        this.ivSize = Integer.parseInt(ivSize);
+        this.ivSize = parseOrNull(ivSize);
     }
 
     /**
@@ -128,7 +123,7 @@ public class Configuration {
         config.setSymmetricKey(configuration.get(ConfigurationKeys.SYMMETRIC_KEY.name()));
         config.setSymmetricKeySize(configuration.get(ConfigurationKeys.SYMMETRIC_KEY_SIZE.name()));
         config.setIvSize(configuration.get(ConfigurationKeys.IV_SIZE.name()));
-        config.setIv(configuration.get(ConfigurationKeys.IV.name()).getBytes());
+        config.setIv(configuration.get(ConfigurationKeys.IV.name()));
         config.setIntegrity(configuration.get(ConfigurationKeys.INTEGRITY.name()));
         config.setHash(configuration.get(ConfigurationKeys.H.name()));
         config.setHmac(configuration.get(ConfigurationKeys.HMAC.name()));
@@ -163,6 +158,23 @@ public class Configuration {
      */
     public IntegrityMode getIntegrityMode() {
         return IntegrityMode.valueOf(integrity);
+    }
+
+    /**
+     * Parse a string to an integer or return null if it is not possible.
+     * @param input The string to parse.
+     * @return The integer or null.
+     */
+    public Integer parseOrNull(String input) {
+        try {
+            return input != null ? Integer.parseInt(input) : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public static byte[] stringToBytesOrNull(String input) {
+        return (input != null) ? input.getBytes(StandardCharsets.UTF_8) : null;
     }
 
     /**

@@ -1,5 +1,3 @@
-package java.service;
-
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 
@@ -9,17 +7,15 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.IO.FileAccess;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.AlgorithmParameters;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.service.exceptions.IntegrityException;
-import java.service.exceptions.OutOfOrderPacketException;
 import java.util.Arrays;
 
 public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
@@ -33,12 +29,12 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
 
     private final DatagramSocket socket;
     private final Configuration config;
-    private SecretKey encryptionKey;
-    private SecretKey integrityKey;
+    private SecretKeySpec encryptionKey;
+    private SecretKeySpec integrityKey;
     private Cipher cipher;
     private int sequenceNumber = 0;
 
-    private final static String configPath = "config.txt";
+    private final static String configPath = "./code/config.txt";
 
     public SecureDatagramSocket(InetAddress address, int port) throws Exception {
         config = new FileAccess().readConfigFile(configPath);
@@ -47,17 +43,16 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
     }
 
     @Override
-    public void send(String message, InetAddress address, int port) throws Exception {
-        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-
+    public void send(byte[] message, InetAddress address, int port) throws Exception {
         if (requiresIV(config.getConfidentialityAlgorithm())) {
             IvParameterSpec iv = generateIV(config.getConfidentialityAlgorithm());
             config.setIv(iv.getIV());
             cipher.init(Cipher.ENCRYPT_MODE, encryptionKey, iv);
-        } else
+        } else {
             cipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
+        }
 
-        byte[] encryptedMessage = cipher.doFinal(messageBytes);
+        byte[] encryptedMessage = cipher.doFinal(message);
 
         byte[] integrity = computeIntegrity(encryptedMessage, config.getIntegrityMode());
 
@@ -114,7 +109,8 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
     private void initializeKeysAndCipher() throws Exception {
         encryptionKey = createAndValidateKey(config.getSymmetricKey(), config.getConfidentialityAlgorithm(), config.getSymmetricKeySize());
         cipher = Cipher.getInstance(config.getConfidentialityAlgorithm());
-        integrityKey = createAndValidateKey(config.getHmacKey(), config.getHmac(), config.getHmacKeySize());
+        if (config.getIntegrityMode() == IntegrityMode.HMAC)
+            integrityKey = createAndValidateKey(config.getHmacKey(), config.getHmac(), config.getHmacKeySize());
     }
 
     /**
@@ -154,6 +150,7 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
         short seqNr = packetBuffer.getShort();
 
         if (seqNr < sequenceNumber) {
+            logger.error(() -> "Received out-of-order packet. Expected: " + sequenceNumber + ", received: " + seqNr);
             throw new OutOfOrderPacketException("Computed sequence number: " + sequenceNumber + ", received: " + seqNr);
         }
         sequenceNumber = seqNr;
@@ -167,6 +164,7 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
 
         byte[] calculatedIntegrity = computeIntegrity(encryptedMessage, mode);
         if (!Arrays.equals(receivedIntegrity, calculatedIntegrity)) {
+            logger.error(() -> "Integrity check does not match.");
             throw new IntegrityException("Integrity check does not match.");
         }
 
@@ -191,6 +189,7 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
                 MessageDigest digest = MessageDigest.getInstance(config.getHash());
                 return digest.digest(data);
             default:
+                logger.error(() -> "Unsupported IntegrityMode: " + mode);
                 throw new IllegalArgumentException("Unsupported IntegrityMode: " + mode);
         }
     }
@@ -206,6 +205,7 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
     private SecretKeySpec createAndValidateKey(byte[] key, String algorithm, int expectedKeySize) {
         SecretKeySpec secretKey = new SecretKeySpec(key, algorithm);
         if (secretKey.getEncoded().length * 8 != expectedKeySize) {
+            logger.error(() -> "Invalid key size for " + algorithm + ". Expected: " + expectedKeySize + " bits.");
             throw new IllegalArgumentException("Invalid key size for " + algorithm + ". Expected: " + expectedKeySize + " bits.");
         }
         return secretKey;
