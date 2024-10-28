@@ -11,7 +11,7 @@ public class MulticastSender {
 //            System.exit(0);
 //        }
 
-        int more = 1; // change if needed, send 20 time a MCAST message
+        int more = 20; // change if needed, send 20 time a MCAST message
         int port = 7000;
         InetAddress group = InetAddress.getByName("224.0.0.0");
         int timeInterval = 2;

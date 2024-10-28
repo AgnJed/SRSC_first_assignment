@@ -16,11 +16,10 @@ public interface DSTPSocket {
      * Receives a message securely using the DSTP protocol.
      *
      * @param packet the packet to receive the message into.
-     * @return the decrypted message received.
      * @throws IOException if an I/O error occurs while receiving the message.
      * @throws Exception if a cryptographic or protocol error occurs.
      */
-    String receive(DatagramPacket packet) throws IOException, Exception;
+    void receive(DatagramPacket packet) throws IOException, Exception;
 
     /**
      * Closes the DSTP socket, releasing any resources held by the socket.

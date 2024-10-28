@@ -4,6 +4,7 @@ import org.junit.platform.commons.logging.LoggerFactory;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
@@ -12,8 +13,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.AlgorithmParameters;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -50,62 +49,71 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
     }
 
     public void joinGroup(InetAddress group) throws IOException {
-        ((MulticastSocket) socket).joinGroup(group);
+        if (socket instanceof MulticastSocket)
+            ((MulticastSocket) socket).joinGroup(group);
     }
 
     @Override
     public void send(DatagramPacket packet) throws Exception {
         if (requiresIV(config.getConfidentialityAlgorithm())) {
-            IvParameterSpec iv = generateIV(config.getConfidentialityAlgorithm());
-            config.setIv(iv.getIV());
+            AlgorithmParameterSpec iv = generateIV(config.getConfidentialityAlgorithm());
+            config.setIv(iv);
+            // save the new config with the new IV if its first message
+            if (sequenceNumber == 0) {
+                new FileAccess().writeConfigFile(configPath, config);
+            }
             cipher.init(Cipher.ENCRYPT_MODE, encryptionKey, iv);
+
         } else {
             cipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
         }
 
-        Message msg = new Message(new byte[sequenceNumber], packet.getData(), computeIntegrity(packet.getData(), config.getIntegrityMode()));
-        System.out.println("SEQ" + Arrays.toString(msg.getSequenceNumber()));
-        System.out.println("DATA: " + Arrays.toString(msg.getData()));
-        System.out.println("INTEGRITY: " + Arrays.toString(msg.getIntegrity()));
+        Message msg = new Message(
+                ByteBuffer.allocate(SEQ_NR_SIZE).putShort((short) sequenceNumber++).array(),
+                sequenceNumber == 0 ? packet.getData() : appendIV(config.getIv(), packet.getData()),
+                computeIntegrity(sequenceNumber == 0 ? packet.getData() : appendIV(config.getIv(), packet.getData()), config.getIntegrityMode())
+        );
         byte[] encryptedMessage = cipher.doFinal(msg.getAll());
+
         ByteBuffer packetBuffer = constructPacketBuffer(encryptedMessage);
 
         packet.setData(packetBuffer.array());
         packet.setLength(packetBuffer.array().length);
         socket.send(packet);
-
-        sequenceNumber++;
     }
 
     @Override
-    public String receive(DatagramPacket packet) throws Exception {
+    public void receive(DatagramPacket packet) throws Exception {
         socket.receive(packet);
         byte[] data = new byte[packet.getLength()];
         System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
 
-        Message receivedData = parseReceivedPacket(data, config.getIntegrityMode());
+        int payloadLength = ByteBuffer.wrap(data, VERSION_SIZE + RELEASE_SIZE, PAYLOAD_LEN_SIZE).getShort();
+        byte[] receivedMessage = Arrays.copyOfRange(data, HEADER_SIZE, HEADER_SIZE + payloadLength);
 
         if (requiresIV(config.getConfidentialityAlgorithm())) {
-            cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new IvParameterSpec(config.getIv()));
+            if (config.isGCMMode()) {
+                cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new GCMParameterSpec(config.getIvSize(), config.getIv()));
+            } else {
+                cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new IvParameterSpec(config.getIv()));
+            }
         } else {
             cipher.init(Cipher.DECRYPT_MODE, encryptionKey);
         }
 
-        byte[] decrypt = cipher.doFinal(receivedData.getAll());
+        byte[] decrypt = cipher.doFinal(receivedMessage);
 
-        byte[] decryptedMessage = Arrays.copyOfRange(decrypt, SEQ_NR_SIZE, decrypt.length - receivedData.getIntegrity().length);
-        byte[] receivedIntegrity = Arrays.copyOfRange(decrypt, SEQ_NR_SIZE + decryptedMessage.length, decrypt.length);
-        System.out.println("DATA: " + Arrays.toString(decryptedMessage));
-        System.out.println("INTEGRITY: " + Arrays.toString(receivedIntegrity));
+        Message receivedData = parseReceivedPacket(decrypt, decrypt.length, config.getIntegrityMode(), config.getIvSize() > 0);
 
-        byte[] computedIntegrity = computeIntegrity(decryptedMessage, config.getIntegrityMode());
-        System.out.println(Arrays.toString(computedIntegrity));
-        if (!Arrays.equals(receivedIntegrity, computedIntegrity)) {
-            logger.error(() -> "Integrity check failed. Received: " + Arrays.toString(receivedIntegrity) + ", computed: " + Arrays.toString(computedIntegrity));
+        byte[] computedIntegrity = computeIntegrity(receivedData.getData(), config.getIntegrityMode());
+        if (!Arrays.equals(receivedData.getIntegrity(), computedIntegrity)) {
+            logger.error(() -> "Integrity check failed. Received: " + Arrays.toString(receivedData.getIntegrity()) + ", computed: " + Arrays.toString(computedIntegrity));
             throw new IntegrityException("Integrity check failed.");
         }
 
-        return new String(decryptedMessage, StandardCharsets.UTF_8);
+        // Copy the extracted data into the packet's original buffer, maintaining buffer size
+        System.arraycopy(receivedData.getData(), 0, packet.getData(), 0, receivedData.getData().length);
+        packet.setLength(receivedData.getData().length);
     }
 
     @Override
@@ -126,7 +134,7 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
      * @throws Exception If an error occurs while initializing the keys or cipher.
      */
     private void initializeKeysAndCipher() throws Exception {
-        encryptionKey = createAndValidateKey(config.getSymmetricKey(), config.getConfidentialityAlgorithm().split("/")[0] , config.getSymmetricKeySize());
+        encryptionKey = createAndValidateKey(config.getSymmetricKey(), config.getConfidentialityAlgorithm().split("/")[0], config.getSymmetricKeySize());
         cipher = Cipher.getInstance(config.getConfidentialityAlgorithm());
         if (config.getIntegrityMode() == IntegrityMode.HMAC)
             integrityKey = createAndValidateKey(config.getHmacKey(), config.getHmac(), config.getHmacKeySize());
@@ -143,12 +151,12 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
                 encryptedMessage.length);
 
         //HEADERS
-        buffer.putShort((short) 0); // Version
-        buffer.put((byte) 0); // Release
-        buffer.putShort((short) (SEQ_NR_SIZE + encryptedMessage.length)); // Payload length
+
+        buffer.putShort((short) 0xFF); // Version
+        buffer.put((byte) (0xF - 1)); // Release
+        buffer.putShort((short) (encryptedMessage.length)); // Payload length
 
         // Content
-        buffer.putShort((short) sequenceNumber);
         buffer.put(encryptedMessage);
 
         return buffer;
@@ -162,21 +170,19 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
      * @return The decrypted message from the packet.
      * @throws Exception If an error occurs while parsing or validating the packet.
      */
-    private Message parseReceivedPacket(byte[] packetBuffer, IntegrityMode mode) throws Exception {
-        short seqNr = ByteBuffer.wrap(packetBuffer, HEADER_SIZE, SEQ_NR_SIZE).getShort();
-        short payloadLength = ByteBuffer.wrap(packetBuffer, VERSION_SIZE + RELEASE_SIZE, PAYLOAD_LEN_SIZE).getShort();
-
-//        if (seqNr < sequenceNumber) {
-//            logger.error(() -> "Received out-of-order packet. Expected: " + sequenceNumber + ", received: " + seqNr);
-//            throw new OutOfOrderPacketException("Computed sequence number: " + sequenceNumber + ", received: " + seqNr);
-//        }
-//        sequenceNumber = seqNr;
+    private Message parseReceivedPacket(byte[] packetBuffer, int payloadLength, IntegrityMode mode, boolean hasIv) throws Exception {
+        short seqNr = ByteBuffer.wrap(packetBuffer, 0, SEQ_NR_SIZE).getShort();
+        if (seqNr < sequenceNumber) {
+            logger.error(() -> "Received out-of-order packet. Expected: " + sequenceNumber + ", received: " + seqNr);
+            throw new OutOfOrderPacketException("Computed sequence number: " + sequenceNumber + ", received: " + seqNr);
+        }
+        sequenceNumber = seqNr;
         int integritySize = mode == IntegrityMode.H ? 32 : Mac.getInstance(config.getHmac()).getMacLength();
-        int encryptedMessageLength = payloadLength - SEQ_NR_SIZE - integritySize;
+        int encryptedMessageLength = payloadLength - SEQ_NR_SIZE - integritySize - (hasIv ? config.getIvSize() : 0);
         byte[] encryptedMessage = new byte[encryptedMessageLength];
         byte[] receivedIntegrity = new byte[integritySize];
-        System.arraycopy(packetBuffer, HEADER_SIZE + SEQ_NR_SIZE, encryptedMessage, 0, encryptedMessageLength);
-        System.arraycopy(packetBuffer, HEADER_SIZE + SEQ_NR_SIZE + encryptedMessageLength, receivedIntegrity, 0, integritySize);
+        System.arraycopy(packetBuffer, SEQ_NR_SIZE, encryptedMessage, 0, encryptedMessageLength);
+        System.arraycopy(packetBuffer, SEQ_NR_SIZE + encryptedMessageLength, receivedIntegrity, 0, integritySize);
 
         return new Message(new byte[seqNr], encryptedMessage, receivedIntegrity);
     }
@@ -227,10 +233,10 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
      * @param algorithm The algorithm string (e.g., "AES/CBC/PKCS5Padding")
      * @return True if the algorithm requires an IV, false otherwise.
      */
-    public static boolean requiresIV(String algorithm) {
+    public boolean requiresIV(String algorithm) {
         try {
             Cipher cipher = Cipher.getInstance(algorithm);
-            return cipher.getBlockSize() > 0 && cipher.getIV() != null;
+            return (cipher.getBlockSize() > 0 && cipher.getIV() != null) || config.isGCMMode();
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             logger.error(() -> "Invalid algorithm: " + algorithm);
             return false;
@@ -245,7 +251,7 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
      * @throws NoSuchAlgorithmException if the algorithm is not valid
      * @throws NoSuchPaddingException   if the padding is not valid
      */
-    public static IvParameterSpec generateIV(String algorithm) throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public AlgorithmParameterSpec generateIV(String algorithm) throws NoSuchAlgorithmException, NoSuchPaddingException {
         Cipher cipher = Cipher.getInstance(algorithm);
         int blockSize = cipher.getBlockSize();
 
@@ -253,6 +259,17 @@ public class SecureDatagramSocket implements DSTPSocket, AutoCloseable {
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(ivBytes);
 
-        return new IvParameterSpec(ivBytes);
+        if (config.isGCMMode()) {
+            return new GCMParameterSpec(128, ivBytes); // IS HARD CODED 128 DONT EFFING LIKE IT
+        } else {
+            return new IvParameterSpec(ivBytes);
+        }
+    }
+
+    public byte[] appendIV(byte[] iv, byte[] data) {
+        byte[] result = new byte[iv.length + data.length];
+        System.arraycopy(iv, 0, result, 0, iv.length);
+        System.arraycopy(data, 0, result, iv.length, data.length);
+        return result;
     }
 }

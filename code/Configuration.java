@@ -1,4 +1,7 @@
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.StandardCharsets;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,28 +34,27 @@ public class Configuration {
         return symmetricKeySize;
     }
 
-    public void setSymmetricKeySize(Integer symmetricKeySize) {
-        this.symmetricKeySize = symmetricKeySize;
-    }
-
     public Integer getIvSize() {
         return ivSize;
-    }
-
-    public void setIvSize(Integer ivSize) {
-        this.ivSize = ivSize;
     }
 
     public byte[] getIv() {
         return iv;
     }
 
-    public void setIv(byte[] iv) {
-        this.iv = iv;
+    public void setIv(AlgorithmParameterSpec iv) {
+        if (iv instanceof IvParameterSpec) {
+            this.iv = ((IvParameterSpec) iv).getIV();
+            this.ivSize = this.iv.length;
+        } else if (iv instanceof GCMParameterSpec) {
+            this.iv = ((GCMParameterSpec) iv).getIV();
+            this.ivSize = this.iv.length;
+        }
     }
 
     public void setIv(String iv) {
         this.iv = stringToBytesOrNull(iv);
+        this.ivSize = iv == null ? null : iv.length();
     }
 
     public String getIntegrity() {
@@ -87,16 +89,14 @@ public class Configuration {
         return hmacKeySize;
     }
 
-    public void setHmacKeySize(Integer hmacKeySize) {
-        this.hmacKeySize = hmacKeySize;
-    }
-
     public void setSymmetricKey(String symmetricKey) {
         this.symmetricKey = stringToBytesOrNull(symmetricKey);
+        this.symmetricKeySize = symmetricKey == null ? null : symmetricKey.length();
     }
 
     public void setHmacKey(String hmacKey) {
         this.hmacKey = stringToBytesOrNull(hmacKey);
+        this.hmacKeySize = hmacKey == null ? null : hmacKey.length();
     }
 
     public void setHmacKeySize(String hmacKeySize) {
@@ -173,6 +173,10 @@ public class Configuration {
         }
     }
 
+    public boolean isGCMMode() {
+        return confidentialityAlgorithm.contains("GCM");
+    }
+
     public static byte[] stringToBytesOrNull(String input) {
         return (input != null) ? input.getBytes(StandardCharsets.UTF_8) : null;
     }
@@ -190,6 +194,6 @@ public class Configuration {
         H,
         HMAC,
         HMAC_KEY,
-        HMAC_KEY_SIZE;
+        HMAC_KEY_SIZE
     }
 }
