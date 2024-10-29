@@ -1,6 +1,7 @@
-import TFTPClient.src.Configuration;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+package TFTPServer.src;
+
+//import org.junit.platform.commons.logging.Logger;
+//import org.junit.platform.commons.logging.LoggerFactory;
 
 import java.io.*;
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import java.util.Map;
  */
 public class FileAccess {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileAccess.class);
+//    private static final Logger logger = LoggerFactory.getLogger(FileAccess.class);
 
     private static final String NULL_VALUE = "NULL";
     private static final String SEPARATOR = ":";
@@ -40,7 +41,7 @@ public class FileAccess {
                 configMap.put(key, NULL_VALUE.equalsIgnoreCase(value) ? NULL_VALUE : value);
             }
         } catch (IOException e) {
-            logger.error(() -> "Error reading the config file: " + e.getMessage());
+//            logger.error(() -> "Error reading the config file: " + e.getMessage());
         }
         return Configuration.parceConfiguration(configMap);
     }
@@ -61,7 +62,7 @@ public class FileAccess {
             }
 
         } catch (IOException e) {
-            logger.error(() -> "Error writing the config file: " + e.getMessage());
+//            logger.error(() -> "Error writing the config file: " + e.getMessage());
         }
     }
 }

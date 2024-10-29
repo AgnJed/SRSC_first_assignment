@@ -1,10 +1,7 @@
-import TFTPClient.src.Configuration;
-import TFTPClient.src.DSTPSocket;
-import TFTPClient.src.FileAccess;
-import TFTPClient.src.IntegrityException;
-import TFTPClient.src.OutOfOrderPacketException;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+package TFTPServer.src;
+
+//import org.junit.platform.commons.logging.Logger;
+//import org.junit.platform.commons.logging.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -23,7 +20,7 @@ import java.util.Arrays;
 
 public class SecureDatagramSocket implements DSTPSocket {
 
-    private static final Logger logger = LoggerFactory.getLogger(SecureDatagramSocket.class);
+//    private static final Logger logger = LoggerFactory.getLogger(SecureDatagramSocket.class);
 
     private static final int VERSION_SIZE = 2; // 16 bits
     private static final int RELEASE_SIZE = 1; // 8 bits
@@ -94,19 +91,19 @@ public class SecureDatagramSocket implements DSTPSocket {
                     integrity
             );
 
-            System.out.println("Sequence number: " + Arrays.toString(msg.sequenceNumber()));
-            System.out.println("Data: " + Arrays.toString(msg.data()));
-            System.out.println("Integrity: " + Arrays.toString(msg.integrity()));
+//            System.out.println("Sequence number: " + Arrays.toString(msg.sequenceNumber()));
+//            System.out.println("Data: " + Arrays.toString(msg.data()));
+//            System.out.println("Integrity: " + Arrays.toString(msg.integrity()));
             byte[] encryptedMessage = cipher.doFinal(msg.getAll());
-            System.out.println("Encrypted message: " + Arrays.toString(encryptedMessage));
+//            System.out.println("Encrypted message: " + Arrays.toString(encryptedMessage));
             ByteBuffer packetBuffer = constructPacketBuffer(encryptedMessage, config.getIv());
-            System.out.println("Packet buffer: " + Arrays.toString(packetBuffer.array()));
+//            System.out.println("Packet buffer: " + Arrays.toString(packetBuffer.array()));
             packet.setData(packetBuffer.array());
             packet.setLength(packetBuffer.array().length);
             socket.send(packet);
 
         } catch (Throwable e) {
-            logger.error(() -> "Error sending packet: " + e.getMessage());
+//            logger.error(() -> "Error sending packet: " + e.getMessage());
             if (e instanceof IOException)
                 throw (IOException) e;
             else if (e instanceof IntegrityException)
@@ -139,13 +136,13 @@ public class SecureDatagramSocket implements DSTPSocket {
             byte[] decrypt = cipher.doFinal(messageWOIv);
 
             Message receivedData = parseReceivedPacket(decrypt, decrypt.length, config.getIntegrityMode());
-            System.out.println("Sequence number: " + Arrays.toString(receivedData.sequenceNumber()));
-            System.out.println("Received data: " + Arrays.toString(receivedData.data()));
-            System.out.println("Received integrity: " + Arrays.toString(receivedData.integrity()));
+//            System.out.println("Sequence number: " + Arrays.toString(receivedData.sequenceNumber()));
+//            System.out.println("Received data: " + Arrays.toString(receivedData.data()));
+//            System.out.println("Received integrity: " + Arrays.toString(receivedData.integrity()));
 
             byte[] computedIntegrity = computeIntegrity(receivedData.data(), config.getIntegrityMode());
             if (!Arrays.equals(receivedData.integrity(), computedIntegrity)) {
-                logger.error(() -> "Integrity check failed. Received: " + Arrays.toString(receivedData.integrity()) + ", computed: " + Arrays.toString(computedIntegrity));
+//                logger.error(() -> "Integrity check failed. Received: " + Arrays.toString(receivedData.integrity()) + ", computed: " + Arrays.toString(computedIntegrity));
                 throw new IntegrityException("Integrity check failed.");
             }
 
@@ -153,7 +150,7 @@ public class SecureDatagramSocket implements DSTPSocket {
             System.arraycopy(receivedData.data(), 0, packet.getData(), 0, receivedData.data().length);
             packet.setLength(receivedData.data().length);
         } catch (Throwable e) {
-            logger.error(() -> "Error receiving packet: " + e.getMessage());
+//            logger.error(() -> "Error receiving packet: " + e.getMessage());
             if (e instanceof IOException)
                 throw (IOException) e;
             else if (e instanceof IntegrityException)
@@ -224,7 +221,7 @@ public class SecureDatagramSocket implements DSTPSocket {
     private Message parseReceivedPacket(byte[] packetBuffer, int payloadLength, Configuration.IntegrityMode mode) throws Exception {
         short seqNr = ByteBuffer.wrap(packetBuffer, 0, SEQ_NR_SIZE).getShort();
         if (seqNr < sequenceNumber) {
-            logger.error(() -> "Received out-of-order packet. Expected: " + sequenceNumber + ", received: " + seqNr);
+//            logger.error(() -> "Received out-of-order packet. Expected: " + sequenceNumber + ", received: " + seqNr);
             throw new OutOfOrderPacketException("Computed sequence number: " + sequenceNumber + ", received: " + seqNr);
         }
         sequenceNumber = seqNr;
@@ -257,7 +254,7 @@ public class SecureDatagramSocket implements DSTPSocket {
                 MessageDigest digest = MessageDigest.getInstance(config.getHash());
                 return digest.digest(data);
             default:
-                logger.error(() -> "Unsupported IntegrityMode: " + mode);
+//                logger.error(() -> "Unsupported IntegrityMode: " + mode);
                 throw new IllegalArgumentException("Unsupported IntegrityMode: " + mode);
         }
     }
@@ -273,7 +270,7 @@ public class SecureDatagramSocket implements DSTPSocket {
     private SecretKeySpec createAndValidateKey(byte[] key, String algorithm, int expectedKeySize) {
         SecretKeySpec secretKey = new SecretKeySpec(key, algorithm);
         if (secretKey.getEncoded().length * 8 != expectedKeySize) {
-            logger.error(() -> "Invalid key size for " + algorithm + ". Expected: " + expectedKeySize + " bits.");
+//            logger.error(() -> "Invalid key size for " + algorithm + ". Expected: " + expectedKeySize + " bits.");
             throw new IllegalArgumentException("Invalid key size for " + algorithm + ". Expected: " + expectedKeySize + " bits.");
         }
         return secretKey;
@@ -290,7 +287,7 @@ public class SecureDatagramSocket implements DSTPSocket {
             Cipher cipher = Cipher.getInstance(algorithm);
             return (cipher.getBlockSize() > 0 && cipher.getIV() != null) || config.isGCMMode();
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            logger.error(() -> "Invalid algorithm: " + algorithm);
+//            logger.error(() -> "Invalid algorithm: " + algorithm);
             return false;
         }
     }
