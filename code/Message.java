@@ -1,25 +1,5 @@
-public class Message {
-    private byte[] sequenceNumber;
-    private byte[] data;
-    private byte[] integrity;
 
-    public Message(byte[] sequenceNumber, byte[] data, byte[] integrity) {
-        this.sequenceNumber = sequenceNumber;
-        this.data = data;
-        this.integrity = integrity;
-    }
-
-    public byte[] getData() {
-        return data;
-    }
-
-    public byte[] getIntegrity() {
-        return integrity;
-    }
-
-    public byte[] getSequenceNumber() {
-        return sequenceNumber;
-    }
+public record Message(byte[] sequenceNumber, byte[] data, byte[] integrity) {
 
     public byte[] getAll() {
         byte[] all = new byte[sequenceNumber.length + data.length + integrity.length];

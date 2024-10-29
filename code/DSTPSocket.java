@@ -1,6 +1,5 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 
 public interface DSTPSocket {
     /**
@@ -8,7 +7,7 @@ public interface DSTPSocket {
      *
      * @param packet the packet to send.
      * @throws IOException if an I/O error occurs while sending the message.
-     * @throws Exception if a cryptographic or protocol error occurs.
+     * @throws Exception   if a cryptographic or protocol error occurs.
      */
     void send(DatagramPacket packet) throws IOException, Exception;
 
@@ -17,7 +16,7 @@ public interface DSTPSocket {
      *
      * @param packet the packet to receive the message into.
      * @throws IOException if an I/O error occurs while receiving the message.
-     * @throws Exception if a cryptographic or protocol error occurs.
+     * @throws Exception   if a cryptographic or protocol error occurs.
      */
     void receive(DatagramPacket packet) throws IOException, Exception;
 

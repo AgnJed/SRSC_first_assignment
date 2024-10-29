@@ -17,7 +17,7 @@ public class MulticastReceiver {
             System.exit(0);
         }
 
-        SecureDatagramSocket rs = new SecureDatagramSocket(group, port, true);
+        SecureDatagramSocket rs = new SecureDatagramSocket(port);
         rs.joinGroup(group);
         DatagramPacket p = new DatagramPacket(new byte[65536], 65536);
         String recvmsg;

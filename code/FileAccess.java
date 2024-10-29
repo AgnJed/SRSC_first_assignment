@@ -19,6 +19,7 @@ public class FileAccess {
 
     /**
      * Read the configuration from the file.
+     *
      * @param filePath The path to the configuration file.
      * @return The configuration object.
      * TODO the return type could be a Map<String, String> instead of Configuration
@@ -45,6 +46,7 @@ public class FileAccess {
 
     /**
      * Write the configuration back to the file.
+     *
      * @param filePath The path to the configuration file.
      */
     public void writeConfigFile(String filePath, Configuration config) {
@@ -58,7 +60,7 @@ public class FileAccess {
             }
 
         } catch (IOException e) {
-            //logger.error(() -> "Error writing the config file: " + e.getMessage());
+            logger.error(() -> "Error writing the config file: " + e.getMessage());
         }
     }
 }

@@ -1,6 +1,5 @@
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.util.Date;
 
 public class MulticastSender {
@@ -11,7 +10,7 @@ public class MulticastSender {
 //            System.exit(0);
 //        }
 
-        int more = 20; // change if needed, send 20 time a MCAST message
+        int more = 1; // change if needed, send 20 time a MCAST message
         int port = 7000;
         InetAddress group = InetAddress.getByName("224.0.0.0");
         int timeInterval = 2;
@@ -22,7 +21,7 @@ public class MulticastSender {
             System.exit(0);
         }
 
-        DSTPSocket ms = new SecureDatagramSocket(group, port, true);
+        SecureDatagramSocket ms = new SecureDatagramSocket(port);
         do {
             String msgsecret = "top secret message, sent on: ";
             String msgdate = new Date().toString();
