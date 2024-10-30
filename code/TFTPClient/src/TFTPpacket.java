@@ -53,7 +53,7 @@ public class TFTPpacket {
   } 
 
   // Methods to receive packet and convert it to yhe right type(data/ack/read/...)
-  public static TFTPpacket receive(DSTPSocket sock) throws Exception {
+  public static TFTPpacket receive(DatagramSocket sock) throws IOException {
     TFTPpacket in=new TFTPpacket(), retPak=new TFTPpacket();
     //receive data and put them into in.message
     DatagramPacket inPak = new DatagramPacket(in.message,in.length);
@@ -86,7 +86,7 @@ public class TFTPpacket {
   }
   
   //Method to send packet
-  public void send(InetAddress ip, int port, DSTPSocket s) throws Exception {
+  public void send(InetAddress ip, int port, DatagramSocket s) throws IOException {
     s.send(new DatagramPacket(message,length,ip,port));
   }
 

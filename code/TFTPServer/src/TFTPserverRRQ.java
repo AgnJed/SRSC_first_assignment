@@ -8,7 +8,7 @@ import java.util.*;
 
 class TFTPserverRRQ extends Thread {
 
-	protected DSTPSocket sock;
+	protected SecureUnicastSocket sock;
 	protected InetAddress host;
 	protected int port;
 	protected FileInputStream source;
@@ -21,7 +21,7 @@ class TFTPserverRRQ extends Thread {
 		try {
 			req = request;
 			//open new socket with random port num for tranfer
-			sock = new SecureDatagramSocket();
+			sock = new SecureUnicastSocket();
 			sock.setSoTimeout(1000);
 			fileName = request.fileName();
 

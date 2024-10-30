@@ -8,7 +8,7 @@ import java.util.*;
 
 class TFTPserverWRQ extends Thread {
 
-	protected DSTPSocket sock;
+	protected DatagramSocket sock;
 	protected InetAddress host;
 	protected int port;
 	protected FileOutputStream outFile;
@@ -22,7 +22,7 @@ class TFTPserverWRQ extends Thread {
 	public TFTPserverWRQ(TFTPwrite request) throws TftpException {
 		try {
 			req = request;
-			sock = new SecureDatagramSocket(); // new port for transfer
+			sock = new DatagramSocket(); // new port for transfer
 			sock.setSoTimeout(1000);
 
 			host = request.getAddress();

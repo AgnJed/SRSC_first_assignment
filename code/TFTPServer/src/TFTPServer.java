@@ -9,7 +9,7 @@ public class TFTPServer {
 	public static void main(String argv[]) {
 		try {
 			//use port 6973
-			DSTPSocket sock = new SecureDatagramSocket(6973);
+			SecureUnicastSocket sock = new SecureUnicastSocket(6973);
 			System.out.println("Server Ready.  Port:  " + sock.getLocalPort());
 
 			// Listen for requests
@@ -32,8 +32,6 @@ public class TFTPServer {
 			System.out.println("Server terminated(TftpException)" + e.getMessage());
 		} catch (IOException e) {
 			System.out.println("Server terminated(IOException)" + e.getMessage());
-		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+		}
+	}
 }

@@ -1,5 +1,7 @@
 package TFTPClient.src;
 
+import TFTPServer.src.SecureUnicastSocket;
+
 import java.net.*;
 import java.security.MessageDigest;
 import java.io.*;
@@ -17,7 +19,7 @@ class TFTPclientRRQ {
 		dataMode = mode;
 
 		try {// Create socket and open output file
-			DSTPSocket sock = new SecureDatagramSocket();
+			SecureUnicastSocket sock = new SecureUnicastSocket();
 			sock.setSoTimeout(2000); // set time out to 2s
 
 			FileOutputStream outFile = new FileOutputStream("../"+fileName); //parent folder
@@ -109,8 +111,6 @@ class TFTPclientRRQ {
 			System.out.println(e.getMessage());
 			File wrongFile = new File(fileName);
 			wrongFile.delete();
-		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+		}
+	}
 }

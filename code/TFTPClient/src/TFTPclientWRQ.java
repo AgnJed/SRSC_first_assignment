@@ -15,7 +15,7 @@ class TFTPclientWRQ {
 		dataMode = mode;
 		try {
 			// Create socket and open output file
-			DSTPSocket sock = new SecureDatagramSocket();
+			DatagramSocket sock = new DatagramSocket();
 			sock.setSoTimeout(2000);
 			int timeoutLimit = 5;
 
@@ -98,9 +98,7 @@ class TFTPclientWRQ {
 			System.out.println("IO error, transfer aborted");
 		} catch (TftpException e) {
 			System.out.println(e.getMessage());
-		} catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+		}
+	}
 
 }

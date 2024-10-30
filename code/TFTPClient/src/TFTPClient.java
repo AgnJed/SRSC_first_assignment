@@ -14,28 +14,28 @@ class UseException extends Exception {
 
 public class TFTPClient {
 	public static void main(String argv[]) throws TftpException, UseException {
-		String host = "";
-		String fileName = "";
+		String host = "127.0.0.1";
+		String fileName = "server1.jpg";
 		String mode="octet"; //default mode
-		String type="";
+		String type="R";
 		try {
-			// Process command line
-			if (argv.length == 0)
-				throw new UseException("--Usage-- \nocter mode:  TFTPClient [host] [Type(R/W?)] [filename] \nother mode:  TFTPClient [host] [Type(R/W?)] [filename] [mode]" );
-			//use default mode(octet)
-			if(argv.length == 3){
-				host =argv[0];
-			    type = argv[argv.length - 2];
-			    fileName = argv[argv.length - 1];}
-			//use other modes
-			else if(argv.length == 4){
-				host = argv[0];
-				mode =argv[argv.length-1];
-				type = argv[argv.length - 3];
-				fileName = argv[argv.length - 2];
-			}
-			else throw new UseException("wrong command. \n--Usage-- \nocter mode:  TFTPClient [host] [Type(R/W?)] [filename] \nother mode:  TFTPClient [host] [Type(R/W?)] [filename] [mode]");
-			
+//			// Process command line
+//			if (argv.length == 0)
+//				throw new UseException("--Usage-- \nocter mode:  TFTPClient [host] [Type(R/W?)] [filename] \nother mode:  TFTPClient [host] [Type(R/W?)] [filename] [mode]" );
+//			//use default mode(octet)
+//			if(argv.length == 3){
+//				host =argv[0];
+//			    type = argv[argv.length - 2];
+//			    fileName = argv[argv.length - 1];}
+//			//use other modes
+//			else if(argv.length == 4){
+//				host = argv[0];
+//				mode =argv[argv.length-1];
+//				type = argv[argv.length - 3];
+//				fileName = argv[argv.length - 2];
+//			}
+//			else throw new UseException("wrong command. \n--Usage-- \nocter mode:  TFTPClient [host] [Type(R/W?)] [filename] \nother mode:  TFTPClient [host] [Type(R/W?)] [filename] [mode]");
+//
 			
 			InetAddress server = InetAddress.getByName(host);
 			
